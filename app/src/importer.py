@@ -20,7 +20,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models import Activity, Company, Contact, FairEdition, Opportunity
@@ -84,11 +84,21 @@ async def already_imported(session: AsyncSession) -> bool:
     return result.scalar_one() > 0
 
 
-async def run(session: AsyncSession) -> None:
-    if await already_imported(session):
-        log.info("Import already done, skipping.")
-        return
+IMPORT_LOCK_ID = 294967  # arbitrary advisory lock id
 
+
+async def run(session: AsyncSession) -> None:
+    await session.execute(text(f"SELECT pg_advisory_lock({IMPORT_LOCK_ID})"))
+    try:
+        if await already_imported(session):
+            log.info("Import already done, skipping.")
+            return
+        await _do_import(session)
+    finally:
+        await session.execute(text(f"SELECT pg_advisory_unlock({IMPORT_LOCK_ID})"))
+
+
+async def _do_import(session: AsyncSession) -> None:
     log.info("Starting data import…")
 
     # --- 1. Fair editions ---

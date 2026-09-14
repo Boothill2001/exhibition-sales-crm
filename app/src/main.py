@@ -16,10 +16,14 @@ from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
 from src.agent import opp_to_dict, run_handoff
 from src.db import AsyncSessionLocal, get_db
 from src.importer import run as run_import
 from src.models import Activity, Company, Contact, FairEdition, HandoffRun, Opportunity
+
+VALID_STATUSES = {"open", "won", "lost", "closed", "pending"}
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 log = logging.getLogger(__name__)
@@ -70,6 +74,15 @@ def fmt_date(v) -> str:
 
 templates.env.filters["eur"] = fmt_eur
 templates.env.filters["fmtdate"] = fmt_date
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return templates.TemplateResponse("error.html", {
+        "request": request,
+        "status_code": exc.status_code,
+        "detail": exc.detail or "An error occurred",
+    }, status_code=exc.status_code)
 
 
 # ---------------------------------------------------------------------------
@@ -281,7 +294,9 @@ async def edit_opportunity(
         raise HTTPException(404)
 
     if status:
-        opp.status = status.strip().lower()
+        normalized = status.strip().lower()
+        if normalized in VALID_STATUSES:
+            opp.status = normalized
     opp.brief_notes = brief_notes or None
 
     if expected_close_on:
@@ -358,24 +373,35 @@ async def handoff_run_detail(run_id: int, request: Request, db: AsyncSession = D
     })
 
 
+FOLLOWUP_PAGE_SIZE = 50
+
+
 @app.get("/follow-ups", response_class=HTMLResponse)
-async def follow_ups(request: Request, db: AsyncSession = Depends(get_db)):
+async def follow_ups(request: Request, page: int = 1, db: AsyncSession = Depends(get_db)):
     today = date.today()
     week_ahead = today + timedelta(days=7)
 
+    base_where = [
+        Activity.follow_up_on.isnot(None),
+        Activity.follow_up_on <= week_ahead,
+        or_(Activity.completion_marker == "N", Activity.completion_marker.is_(None)),
+    ]
+
+    total = (await db.execute(
+        select(func.count()).where(*base_where)
+    )).scalar_one()
+
+    offset = (page - 1) * FOLLOWUP_PAGE_SIZE
     result = await db.execute(
         select(Activity)
         .options(
             selectinload(Activity.company),
             selectinload(Activity.opportunity),
         )
-        .where(
-            Activity.follow_up_on.isnot(None),
-            Activity.follow_up_on <= week_ahead,
-            or_(Activity.completion_marker == "N", Activity.completion_marker.is_(None)),
-        )
+        .where(*base_where)
         .order_by(Activity.follow_up_on)
-        .limit(100)
+        .offset(offset)
+        .limit(FOLLOWUP_PAGE_SIZE)
     )
     activities = result.scalars().all()
 
@@ -384,6 +410,9 @@ async def follow_ups(request: Request, db: AsyncSession = Depends(get_db)):
         "activities": activities,
         "today": today,
         "week_ahead": week_ahead,
+        "page": page,
+        "total": total,
+        "total_pages": max(1, (total + FOLLOWUP_PAGE_SIZE - 1) // FOLLOWUP_PAGE_SIZE),
     })
 
 

@@ -33,6 +33,18 @@
   </tbody>
 </table>
 {% else %}
-<p>No follow-ups due in the next 7 days. 🎉</p>
+<p>No follow-ups due in the next 7 days.</p>
+{% endif %}
+
+{% if total_pages > 1 %}
+<nav aria-label="pagination" style="margin-top:0.5rem">
+  {% if page > 1 %}
+    <a href="/follow-ups?page={{ page - 1 }}">&larr; Prev</a>
+  {% endif %}
+  <span>Page {{ page }} / {{ total_pages }} ({{ total }} total)</span>
+  {% if page < total_pages %}
+    <a href="/follow-ups?page={{ page + 1 }}">Next &rarr;</a>
+  {% endif %}
+</nav>
 {% endif %}
 {% endblock %}

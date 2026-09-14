@@ -2,8 +2,9 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional, List
 from sqlalchemy import (
-    Integer, Text, Numeric, Date, DateTime, ForeignKey, JSON, text
+    Integer, Text, Numeric, Date, DateTime, ForeignKey, text
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -108,9 +109,9 @@ class HandoffRun(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), server_default=text("NOW()")
     )
-    crm_snapshot: Mapped[Optional[dict]] = mapped_column(JSON)
-    preparer_output: Mapped[Optional[dict]] = mapped_column(JSON)
-    checker_output: Mapped[Optional[dict]] = mapped_column(JSON)
+    crm_snapshot: Mapped[Optional[dict]] = mapped_column(JSONB)
+    preparer_output: Mapped[Optional[dict]] = mapped_column(JSONB)
+    checker_output: Mapped[Optional[dict]] = mapped_column(JSONB)
     coordinator_decision: Mapped[Optional[str]] = mapped_column(Text)
     decision_reason: Mapped[Optional[str]] = mapped_column(Text)
 

@@ -5,6 +5,7 @@ Create Date: 2026-09-14
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 revision = '001'
 down_revision = None
@@ -96,9 +97,9 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer, primary_key=True),
         sa.Column('opportunity_id', sa.Integer, sa.ForeignKey('opportunities.id'), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('NOW()')),
-        sa.Column('crm_snapshot', sa.JSON),
-        sa.Column('preparer_output', sa.JSON),
-        sa.Column('checker_output', sa.JSON),
+        sa.Column('crm_snapshot', JSONB),
+        sa.Column('preparer_output', JSONB),
+        sa.Column('checker_output', JSONB),
         sa.Column('coordinator_decision', sa.Text),
         sa.Column('decision_reason', sa.Text),
     )

@@ -68,6 +68,5 @@ Find or edit an opportunity with a missing field (e.g., clear the stand area). C
 ## Unfinished work
 
 - Dashboard / pipeline summary (opportunity counts by status, upcoming fair editions)
-- Pagination on large activity lists (currently capped at a page limit)
 - Editing contact details (contacts are read-only after import)
 - Full-text search across activity details
