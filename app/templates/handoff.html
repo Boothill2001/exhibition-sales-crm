@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Handoff Run #{{ run.id }} — CRM{% endblock %}
+{% block content %}
+
+<p><a href="/opportunities/{{ run.opportunity.opportunity_code }}">&larr; {{ run.opportunity.opportunity_code }}</a>
+  &mdash; {{ run.opportunity.company.company_name }}</p>
+
+<h2>Handoff Run #{{ run.id }}
+  <span class="badge {% if run.coordinator_decision == 'PASS' %}badge-pass{% else %}badge-stop{% endif %}">
+    {{ run.coordinator_decision }}
+  </span>
+</h2>
+<p><small>{{ run.created_at.strftime('%Y-%m-%d %H:%M UTC') if run.created_at else '' }}
+  &mdash; All roles are <strong>[DETERMINISTIC STAND-IN]</strong> — no LLM or API calls.</small></p>
+
+<section>
+  <h3>Coordinator decision</h3>
+  <blockquote>{{ run.decision_reason }}</blockquote>
+  <form method="post" action="/opportunities/{{ run.opportunity.opportunity_code }}/handoff" style="margin-top:0.5rem">
+    <button type="submit" class="secondary">Run again (current data)</button>
+  </form>
+</section>
+
+{% set preparer = run.preparer_output or {} %}
+{% set checker = run.checker_output or {} %}
+
+<section>
+  <details open>
+    <summary><strong>Role 1: BriefPreparer</strong> <small>[DETERMINISTIC STAND-IN]</small></summary>
+    <table>
+      <tbody>
+        <tr><th>Company</th><td>{{ preparer.get('company_name', '—') }}</td></tr>
+        <tr><th>Contact</th><td>{{ preparer.get('contact_name') or '—' }}</td></tr>
+        <tr><th>Fair</th><td>{{ preparer.get('fair_name') or '—' }} ({{ preparer.get('fair_edition_code') or '—' }})</td></tr>
+        <tr><th>Location</th><td>{{ preparer.get('fair_city') or '—' }}, {{ preparer.get('fair_venue') or '—' }}</td></tr>
+        <tr><th>Fair dates</th><td>{{ preparer.get('fair_starts_on') or '—' }} → {{ preparer.get('fair_ends_on') or '—' }}</td></tr>
+        <tr><th>Max height</th><td>{{ preparer.get('max_stand_height_m') or '—' }} m</td></tr>
+        <tr><th>Client budget</th><td>{{ preparer.get('client_budget_eur') or '—' }} EUR</td></tr>
+        <tr><th>Stand area</th><td>{{ preparer.get('stand_area_sqm') or '—' }} m²</td></tr>
+        <tr><th>Requested height</th><td>{{ preparer.get('requested_height_m') or '—' }} m</td></tr>
+        <tr><th>Brief notes</th><td>{{ preparer.get('brief_notes') or '—' }}</td></tr>
+        <tr><th>Expected close</th><td>{{ preparer.get('expected_close_on') or '—' }}</td></tr>
+      </tbody>
+    </table>
+    <p><strong>Proposed next step:</strong><br>{{ preparer.get('proposed_next_step', '—') }}</p>
+  </details>
+</section>
+
+<section>
+  <details open>
+    <summary><strong>Role 2: BriefChecker</strong> <small>[DETERMINISTIC STAND-IN]</small> — policy: {{ checker.get('policy', '—') }}</summary>
+    {% set blocking = checker.get('blocking_issues', []) %}
+    {% set advisory = checker.get('advisory_notes', []) %}
+    {% if blocking %}
+    <p><strong>Blocking issues:</strong></p>
+    <ul>{% for issue in blocking %}<li class="warn">{{ issue }}</li>{% endfor %}</ul>
+    {% else %}
+    <p style="color:#065f46">✅ No blocking issues.</p>
+    {% endif %}
+    {% if advisory %}
+    <p><strong>Advisory:</strong></p>
+    <ul>{% for note in advisory %}<li><small>{{ note }}</small></li>{% endfor %}</ul>
+    {% endif %}
+  </details>
+</section>
+
+{% endblock %}

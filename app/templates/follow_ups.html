@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Follow-ups — CRM{% endblock %}
+{% block content %}
+<h2>📅 Follow-ups due (next 7 days + overdue)</h2>
+<p><small>Showing open tasks and activities with a follow-up date due by {{ week_ahead }}.</small></p>
+
+{% if activities %}
+<table>
+  <thead>
+    <tr><th>Due</th><th>Type</th><th>Company</th><th>Opportunity</th><th>Details</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for act in activities %}
+  <tr>
+    <td {% if act.follow_up_on <= today %}class="overdue"{% endif %}>
+      {{ act.follow_up_on }}
+    </td>
+    <td>{{ act.activity_type or '—' }}</td>
+    <td><a href="/companies/{{ act.company.company_code }}">{{ act.company.company_name }}</a></td>
+    <td>
+      {% if act.opportunity %}
+      <a href="/opportunities/{{ act.opportunity.opportunity_code }}">{{ act.opportunity.opportunity_code }}</a>
+      {% else %}—{% endif %}
+    </td>
+    <td>{{ act.details or '' }}</td>
+    <td>
+      <form method="post" action="/activities/{{ act.id }}/complete">
+        <button type="submit" style="padding:0.2em 0.6em;font-size:0.85em">✅ Done</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No follow-ups due in the next 7 days. 🎉</p>
+{% endif %}
+{% endblock %}

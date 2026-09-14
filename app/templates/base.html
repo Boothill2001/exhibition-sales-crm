@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Exhibition Sales CRM{% endblock %}</title>
+  <link rel="stylesheet" href="/static/pico.min.css">
+  <style>
+    nav { padding: 0.5rem 1rem; background: var(--pico-primary-background); }
+    nav a { color: white; text-decoration: none; font-weight: bold; margin-right: 1.5rem; }
+    nav a:hover { text-decoration: underline; }
+    .badge { display: inline-block; padding: 0.15em 0.5em; border-radius: 4px; font-size: 0.78em; font-weight: 600; }
+    .badge-open { background: #d1fae5; color: #065f46; }
+    .badge-won { background: #dbeafe; color: #1e40af; }
+    .badge-lost { background: #fee2e2; color: #991b1b; }
+    .badge-other { background: #f3f4f6; color: #374151; }
+    .badge-pass { background: #d1fae5; color: #065f46; font-size: 1em; }
+    .badge-stop { background: #fee2e2; color: #991b1b; font-size: 1em; }
+    .warn { color: #b45309; font-weight: 600; }
+    .activity-call { border-left: 3px solid #3b82f6; padding-left: 0.75rem; }
+    .activity-email { border-left: 3px solid #8b5cf6; padding-left: 0.75rem; }
+    .activity-meeting { border-left: 3px solid #10b981; padding-left: 0.75rem; }
+    .activity-note { border-left: 3px solid #f59e0b; padding-left: 0.75rem; }
+    .activity-task { border-left: 3px solid #ef4444; padding-left: 0.75rem; }
+    .overdue { color: #dc2626; font-weight: 600; }
+    small { color: var(--pico-muted-color); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<nav>
+  <a href="/companies">🏢 Companies</a>
+  <a href="/follow-ups">📅 Follow-ups</a>
+</nav>
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>
