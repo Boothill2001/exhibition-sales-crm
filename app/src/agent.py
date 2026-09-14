@@ -19,6 +19,13 @@ import logging
 from decimal import Decimal
 from typing import Any
 
+
+def _json_safe(v: Any) -> Any:
+    """Convert Decimal → str so the dict is JSON-serializable."""
+    if isinstance(v, Decimal):
+        return str(v)
+    return v
+
 log = logging.getLogger(__name__)
 
 
@@ -203,7 +210,10 @@ def run_handoff(opp_dict: dict[str, Any]) -> tuple[dict, dict, dict, str, str]:
 
 
 def opp_to_dict(opp: Any) -> dict[str, Any]:
-    """Serialize an Opportunity ORM object to a plain dict for the agent."""
+    """Serialize an Opportunity ORM object to a plain dict for the agent.
+
+    All Decimal values are converted to str so the dict is safe for JSON storage.
+    """
     fair = opp.fair_edition
     contact = opp.contact
     company = opp.company
@@ -212,10 +222,10 @@ def opp_to_dict(opp: Any) -> dict[str, Any]:
         "opportunity_code": opp.opportunity_code,
         "description": opp.description,
         "status": opp.status,
-        "amount_eur": str(opp.amount_eur) if opp.amount_eur is not None else None,
-        "client_budget_eur": opp.client_budget_eur,
-        "stand_area_sqm": opp.stand_area_sqm,
-        "requested_height_m": opp.requested_height_m,
+        "amount_eur": _json_safe(opp.amount_eur),
+        "client_budget_eur": _json_safe(opp.client_budget_eur),
+        "stand_area_sqm": _json_safe(opp.stand_area_sqm),
+        "requested_height_m": _json_safe(opp.requested_height_m),
         "brief_notes": opp.brief_notes,
         "expected_close_on": str(opp.expected_close_on) if opp.expected_close_on else None,
         "contact_id": opp.contact_id,
@@ -226,7 +236,7 @@ def opp_to_dict(opp: Any) -> dict[str, Any]:
             "venue": fair.venue,
             "starts_on": str(fair.starts_on) if fair.starts_on else None,
             "ends_on": str(fair.ends_on) if fair.ends_on else None,
-            "max_stand_height_m": fair.max_stand_height_m,
+            "max_stand_height_m": _json_safe(fair.max_stand_height_m),
         } if fair else None,
         "contact": {
             "first_name": contact.first_name,

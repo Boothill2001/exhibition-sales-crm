@@ -135,7 +135,7 @@
 
 <!-- Activity timeline -->
 <section>
-  <h3>Activity timeline</h3>
+  <h3>Activity timeline <small style="font-weight:normal">{{ act_total }} total</small></h3>
   {% if activities %}
     {% for act in activities %}
     <article class="activity-{{ act.activity_type or 'note' }}" style="margin-bottom:0.75rem">
@@ -153,6 +153,17 @@
       {% endif %}
     </article>
     {% endfor %}
+    {% if act_total_pages > 1 %}
+    <nav aria-label="activity pagination" style="margin-top:0.5rem">
+      {% if act_page > 1 %}
+        <a href="?act_page={{ act_page - 1 }}">&larr; Newer</a>
+      {% endif %}
+      <span>Page {{ act_page }} / {{ act_total_pages }}</span>
+      {% if act_page < act_total_pages %}
+        <a href="?act_page={{ act_page + 1 }}">Older &rarr;</a>
+      {% endif %}
+    </nav>
+    {% endif %}
   {% else %}
     <p><small>No activities yet.</small></p>
   {% endif %}

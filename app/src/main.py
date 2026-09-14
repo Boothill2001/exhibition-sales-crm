@@ -1,6 +1,8 @@
+import asyncio
 import logging
 import subprocess
 import sys
+import uuid
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -25,15 +27,18 @@ log = logging.getLogger(__name__)
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Run Alembic migrations then import data on first start
-    log.info("Running Alembic migrations...")
+def _run_migrations() -> None:
     subprocess.run(
         ["python", "-m", "alembic", "upgrade", "head"],
         check=True,
         cwd=Path(__file__).parent.parent,
     )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    log.info("Running Alembic migrations...")
+    await asyncio.to_thread(_run_migrations)
     log.info("Migrations done.")
     async with AsyncSessionLocal() as session:
         await run_import(session)
@@ -156,15 +161,22 @@ async def company_detail(company_code: str, request: Request, db: AsyncSession =
     })
 
 
+ACTIVITY_PAGE_SIZE = 50
+
+
 @app.get("/opportunities/{opportunity_code}", response_class=HTMLResponse)
-async def opportunity_detail(opportunity_code: str, request: Request, db: AsyncSession = Depends(get_db)):
+async def opportunity_detail(
+    opportunity_code: str,
+    request: Request,
+    act_page: int = 1,
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
         select(Opportunity)
         .options(
             selectinload(Opportunity.company),
             selectinload(Opportunity.contact),
             selectinload(Opportunity.fair_edition),
-            selectinload(Opportunity.activities),
             selectinload(Opportunity.handoff_runs),
         )
         .where(Opportunity.opportunity_code == opportunity_code)
@@ -173,8 +185,27 @@ async def opportunity_detail(opportunity_code: str, request: Request, db: AsyncS
     if not opp:
         raise HTTPException(404, "Opportunity not found")
 
-    activities = sorted(opp.activities, key=lambda a: a.occurred_at or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
-    handoff_runs = sorted(opp.handoff_runs, key=lambda r: r.created_at or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    # Activities paginated — avoid loading thousands of rows at once
+    act_offset = (act_page - 1) * ACTIVITY_PAGE_SIZE
+    act_count_result = await db.execute(
+        select(func.count()).where(Activity.opportunity_id == opp.id)
+    )
+    act_total = act_count_result.scalar_one()
+
+    acts_result = await db.execute(
+        select(Activity)
+        .where(Activity.opportunity_id == opp.id)
+        .order_by(desc(Activity.occurred_at))
+        .offset(act_offset)
+        .limit(ACTIVITY_PAGE_SIZE)
+    )
+    activities = acts_result.scalars().all()
+
+    handoff_runs = sorted(
+        opp.handoff_runs,
+        key=lambda r: r.created_at or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )
 
     height_over = False
     if opp.requested_height_m and opp.fair_edition and opp.fair_edition.max_stand_height_m:
@@ -184,6 +215,9 @@ async def opportunity_detail(opportunity_code: str, request: Request, db: AsyncS
         "request": request,
         "opp": opp,
         "activities": activities,
+        "act_page": act_page,
+        "act_total": act_total,
+        "act_total_pages": max(1, (act_total + ACTIVITY_PAGE_SIZE - 1) // ACTIVITY_PAGE_SIZE),
         "handoff_runs": handoff_runs,
         "height_over": height_over,
         "today": date.today(),
@@ -213,7 +247,7 @@ async def add_activity(
             pass
 
     act = Activity(
-        entry_id=f"user-{datetime.now(timezone.utc).timestamp()}",
+        entry_id=f"user-{uuid.uuid4().hex}",
         company_id=opp.company_id,
         opportunity_id=opp.id,
         activity_type=activity_type,
@@ -327,8 +361,6 @@ async def handoff_run_detail(run_id: int, request: Request, db: AsyncSession = D
 @app.get("/follow-ups", response_class=HTMLResponse)
 async def follow_ups(request: Request, db: AsyncSession = Depends(get_db)):
     today = date.today()
-    week_ahead = date(today.year, today.month, today.day)
-    from datetime import timedelta
     week_ahead = today + timedelta(days=7)
 
     result = await db.execute(
