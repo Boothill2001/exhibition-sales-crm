@@ -1,42 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Companies — CRM{% endblock %}
 {% block content %}
-<h2>Companies</h2>
-<form method="get" action="/companies" role="search">
-  <div style="display:flex; gap:0.5rem;">
-    <input name="q" value="{{ q }}" placeholder="Search company, region, sales rep…" style="flex:1">
-    <button type="submit">Search</button>
-    {% if q %}<a href="/companies" role="button" class="secondary">Clear</a>{% endif %}
+
+<div class="pg-h"><h1>Companies</h1></div>
+
+<div class="stat-row">
+  <div class="stat-tile">
+    <div class="stat-val">{{ total }}</div>
+    <div class="stat-lbl">Companies</div>
+  </div>
+  <div class="stat-tile">
+    <div class="stat-val">{{ total_pages }}</div>
+    <div class="stat-lbl">Pages</div>
+  </div>
+</div>
+
+<form method="get" action="/companies">
+  <div class="search-bar">
+    <input name="q" value="{{ q }}" placeholder="Search company, region, sales rep&#8230;">
+    <button type="submit" class="btn-p">Search</button>
+    {% if q %}<a href="/companies" class="btn-s" style="padding:.45rem 1rem;display:inline-block;text-decoration:none">Clear</a>{% endif %}
   </div>
 </form>
 
-<p><small>{{ total }} result{{ 's' if total != 1 else '' }}</small></p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Company</th>
-      <th>Region</th>
-      <th>Sales Rep</th>
-      <th>Opportunities</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for row in companies %}
-    <tr>
-      <td><a href="/companies/{{ row.company.company_code }}">{{ row.company.company_name }}</a></td>
-      <td>{{ row.company.region or '—' }}</td>
-      <td>{{ row.company.sales_rep or '—' }}</td>
-      <td>{{ row.opp_count }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4">No companies found.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="tw">
+  <table class="dt">
+    <thead>
+      <tr><th>Company</th><th>Region</th><th>Sales Rep</th><th>Opps</th></tr>
+    </thead>
+    <tbody>
+      {% for row in companies %}
+      <tr>
+        <td><a href="/companies/{{ row.company.company_code }}">{{ row.company.company_name }}</a></td>
+        <td class="dim">{{ row.company.region or '—' }}</td>
+        <td>{{ row.company.sales_rep or '—' }}</td>
+        <td class="num">{{ row.opp_count }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" style="color:var(--text-3)">No companies found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 
 {% if total_pages > 1 %}
-<nav aria-label="pagination">
+<div class="pagination">
   {% if page > 1 %}
     <a href="/companies?q={{ q }}&page={{ page - 1 }}">&larr; Prev</a>
   {% endif %}
@@ -44,6 +52,7 @@
   {% if page < total_pages %}
     <a href="/companies?q={{ q }}&page={{ page + 1 }}">Next &rarr;</a>
   {% endif %}
-</nav>
+</div>
 {% endif %}
+
 {% endblock %}

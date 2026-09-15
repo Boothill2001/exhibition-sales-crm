@@ -2,171 +2,213 @@
 {% block title %}{{ opp.opportunity_code }} — CRM{% endblock %}
 {% block content %}
 
-<p><a href="/companies/{{ opp.company.company_code }}">&larr; {{ opp.company.company_name }}</a></p>
-<h2>Opportunity {{ opp.opportunity_code }}</h2>
+<div class="bc">
+  <a href="/companies">Companies</a>
+  <span class="sep">›</span>
+  <a href="/companies/{{ opp.company.company_code }}">{{ opp.company.company_name }}</a>
+  <span class="sep">›</span>
+  <span>{{ opp.opportunity_code }}</span>
+</div>
+
+<div class="pg-h">
+  <div>
+    <h1>{{ opp.opportunity_code }}</h1>
+    <div class="pg-sub">{{ opp.description or '' }}</div>
+  </div>
+  <div class="pg-actions">
+    {% set s = opp.status or 'unknown' %}
+    {% if s == 'open' %}<span class="st st-open">{{ s }}</span>
+    {% elif s == 'won' %}<span class="st st-won">{{ s }}</span>
+    {% elif s == 'lost' or s == 'closed' %}<span class="st st-lost">{{ s }}</span>
+    {% else %}<span class="st st-other">{{ s }}</span>{% endif %}
+    <form method="post" action="/opportunities/{{ opp.opportunity_code }}/handoff" style="margin:0">
+      <button type="submit" class="btn-p">Prepare Handoff</button>
+    </form>
+  </div>
+</div>
 
 <div class="grid-2">
-  <section>
-    <h3>Details</h3>
-    <table>
-      <tbody>
-        <tr><th>Status</th><td>
-          {% set s = opp.status or 'unknown' %}
-          {% if 'open' in s %}<span class="badge badge-open">{{ s }}</span>
-          {% elif 'won' in s %}<span class="badge badge-won">{{ s }}</span>
-          {% elif 'lost' in s or 'clos' in s %}<span class="badge badge-lost">{{ s }}</span>
-          {% else %}<span class="badge badge-other">{{ s }}</span>{% endif %}
-        </td></tr>
-        <tr><th>Description</th><td>{{ opp.description or '—' }}</td></tr>
-        <tr><th>Amount (sales)</th><td>{{ opp.amount_eur | eur }}</td></tr>
-        <tr><th>Client budget</th><td>{{ opp.client_budget_eur | eur }}</td></tr>
-        <tr><th>Opened</th><td>{{ opp.opened_on | fmtdate }}</td></tr>
-        <tr><th>Expected close</th><td>{{ opp.expected_close_on | fmtdate }}</td></tr>
-        <tr><th>Contact</th><td>{% if opp.contact %}{{ opp.contact.first_name or '' }} {{ opp.contact.last_name or '' }}
+  <div class="card">
+    <div class="card-hd"><h2>Opportunity details</h2></div>
+    <div class="card-bd">
+      <div class="kv">
+        <div class="kv-r"><span class="kv-k">Amount (sales)</span><span class="kv-v">{{ opp.amount_eur | eur }}</span></div>
+        <div class="kv-r"><span class="kv-k">Client budget</span><span class="kv-v">{{ opp.client_budget_eur | eur }}</span></div>
+        <div class="kv-r"><span class="kv-k">Opened</span><span class="kv-v">{{ opp.opened_on | fmtdate }}</span></div>
+        <div class="kv-r"><span class="kv-k">Expected close</span><span class="kv-v">{{ opp.expected_close_on | fmtdate }}</span></div>
+        <div class="kv-r"><span class="kv-k">Contact</span><span class="kv-v">{% if opp.contact %}{{ opp.contact.first_name or '' }} {{ opp.contact.last_name or '' }}
           {% if opp.contact.email %}<br><a href="mailto:{{ opp.contact.email }}">{{ opp.contact.email }}</a>{% endif %}
-        {% else %}—{% endif %}</td></tr>
-      </tbody>
-    </table>
-  </section>
+        {% else %}—{% endif %}</span></div>
+        {% if opp.brief_notes %}
+        <div class="kv-r"><span class="kv-k">Brief notes</span><span class="kv-v" style="font-style:italic">{{ opp.brief_notes }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
-  <section>
-    <h3>Stand &amp; Fair</h3>
-    {% if opp.fair_edition %}
-    <table>
-      <tbody>
-        <tr><th>Fair</th><td>{{ opp.fair_edition.fair_name }}</td></tr>
-        <tr><th>Edition</th><td>{{ opp.fair_edition.fair_edition_code }}</td></tr>
-        <tr><th>Location</th><td>{{ opp.fair_edition.city or '—' }}, {{ opp.fair_edition.venue or '—' }}</td></tr>
-        <tr><th>Dates</th><td>{{ opp.fair_edition.starts_on | fmtdate }} → {{ opp.fair_edition.ends_on | fmtdate }}</td></tr>
-        <tr><th>Max height</th><td>{{ opp.fair_edition.max_stand_height_m or '—' }} m</td></tr>
-        <tr><th>Stand area</th><td>{{ opp.stand_area_sqm or '—' }} m²</td></tr>
-        <tr><th>Requested height</th><td>
+  <div class="card">
+    <div class="card-hd"><h2>Stand &amp; Fair</h2></div>
+    <div class="card-bd">
+      {% if opp.fair_edition %}
+      <div class="kv">
+        <div class="kv-r"><span class="kv-k">Fair</span><span class="kv-v">{{ opp.fair_edition.fair_name }}</span></div>
+        <div class="kv-r"><span class="kv-k">Edition</span><span class="kv-v">{{ opp.fair_edition.fair_edition_code }}</span></div>
+        <div class="kv-r"><span class="kv-k">Location</span><span class="kv-v">{{ opp.fair_edition.city or '—' }}, {{ opp.fair_edition.venue or '—' }}</span></div>
+        <div class="kv-r"><span class="kv-k">Dates</span><span class="kv-v">{{ opp.fair_edition.starts_on | fmtdate }} → {{ opp.fair_edition.ends_on | fmtdate }}</span></div>
+        <div class="kv-r"><span class="kv-k">Max height</span><span class="kv-v">{{ opp.fair_edition.max_stand_height_m or '—' }} m</span></div>
+        <div class="kv-r"><span class="kv-k">Stand area</span><span class="kv-v">{{ opp.stand_area_sqm or '—' }} m²</span></div>
+        <div class="kv-r"><span class="kv-k">Req. height</span><span class="kv-v">
           {{ opp.requested_height_m or '—' }} m
-          {% if height_over %}<span class="warn"> ⚠ exceeds edition limit</span>{% endif %}
-        </td></tr>
-      </tbody>
-    </table>
-    {% else %}
-    <p><small>No fair edition linked.</small></p>
-    {% endif %}
-
-    {% if opp.brief_notes %}
-    <p><strong>Brief notes:</strong><br>{{ opp.brief_notes }}</p>
-    {% endif %}
-  </section>
+          {% if height_over %}<span class="warn"> ⚠ exceeds limit</span>{% endif %}
+        </span></div>
+      </div>
+      {% else %}
+      <span style="color:var(--text-3);font-size:13px">No fair edition linked.</span>
+      {% endif %}
+    </div>
+  </div>
 </div>
 
 <!-- Edit form -->
 <details>
-  <summary>✏️ Edit opportunity</summary>
-  <form method="post" action="/opportunities/{{ opp.opportunity_code }}/edit">
-    <div class="grid-2">
-      <label>Status
-        <select name="status">
-          {% for s in ['open', 'won', 'lost', 'closed', 'pending'] %}
-          <option value="{{ s }}" {% if opp.status == s %}selected{% endif %}>{{ s }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Expected close
-        <input type="date" name="expected_close_on" value="{{ opp.expected_close_on or '' }}">
-      </label>
-      <label>Stand area (m²)
-        <input type="text" name="stand_area_sqm" value="{{ opp.stand_area_sqm or '' }}" placeholder="e.g. 36.00">
-      </label>
-      <label>Requested height (m)
-        <input type="text" name="requested_height_m" value="{{ opp.requested_height_m or '' }}" placeholder="e.g. 4.00">
-      </label>
-      <label>Client budget (EUR)
-        <input type="text" name="client_budget_eur" value="{{ opp.client_budget_eur or '' }}" placeholder="e.g. 25000">
-      </label>
-    </div>
-    <label>Brief notes
-      <textarea name="brief_notes" rows="3">{{ opp.brief_notes or '' }}</textarea>
-    </label>
-    <button type="submit">Save changes</button>
-  </form>
+  <summary>Edit opportunity</summary>
+  <div class="details-body">
+    <form method="post" action="/opportunities/{{ opp.opportunity_code }}/edit">
+      <div class="form-grid">
+        <div>
+          <label for="ed-status">Status</label>
+          <select name="status" id="ed-status">
+            {% for s in ['open', 'won', 'lost', 'closed', 'pending'] %}
+            <option value="{{ s }}" {% if opp.status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="ed-close">Expected close</label>
+          <input type="date" name="expected_close_on" id="ed-close" value="{{ opp.expected_close_on or '' }}">
+        </div>
+        <div>
+          <label for="ed-area">Stand area (m²)</label>
+          <input type="text" name="stand_area_sqm" id="ed-area" value="{{ opp.stand_area_sqm or '' }}" placeholder="e.g. 36.00">
+        </div>
+        <div>
+          <label for="ed-height">Requested height (m)</label>
+          <input type="text" name="requested_height_m" id="ed-height" value="{{ opp.requested_height_m or '' }}" placeholder="e.g. 4.00">
+        </div>
+        <div>
+          <label for="ed-budget">Client budget (EUR)</label>
+          <input type="text" name="client_budget_eur" id="ed-budget" value="{{ opp.client_budget_eur or '' }}" placeholder="e.g. 25000">
+        </div>
+      </div>
+      <div class="form-grid full" style="margin-top:1rem">
+        <div>
+          <label for="ed-notes">Brief notes</label>
+          <textarea name="brief_notes" id="ed-notes" rows="3">{{ opp.brief_notes or '' }}</textarea>
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <button type="submit" class="btn-p">Save changes</button>
+      </div>
+    </form>
+  </div>
 </details>
 
-<!-- Handoff assistant -->
-<section>
-  <h3>🤖 Technical handoff assistant <small style="font-weight:normal">[deterministic stand-in]</small></h3>
-  <form method="post" action="/opportunities/{{ opp.opportunity_code }}/handoff">
-    <button type="submit">Prepare handoff brief</button>
-  </form>
-  {% if handoff_runs %}
-  <p><small>Previous runs:</small></p>
-  <ul>
-    {% for run in handoff_runs[:5] %}
-    <li>
-      <a href="/handoff-runs/{{ run.id }}">Run #{{ run.id }}</a>
-      — <span class="badge {% if run.coordinator_decision == 'PASS' %}badge-pass{% else %}badge-stop{% endif %}">{{ run.coordinator_decision }}</span>
-      <small>{{ run.created_at.strftime('%Y-%m-%d %H:%M') if run.created_at else '' }}</small>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-</section>
-
 <!-- Add activity -->
-<section>
-  <h3>Add activity</h3>
-  <form method="post" action="/opportunities/{{ opp.opportunity_code }}/activities">
-    <div class="grid-2">
-      <label>Type
-        <select name="activity_type">
-          <option value="call">Call</option>
-          <option value="email">Email</option>
-          <option value="meeting">Meeting</option>
-          <option value="note">Note</option>
-          <option value="task">Task</option>
-        </select>
-      </label>
-      <label>Follow-up date
-        <input type="date" name="follow_up_on">
-      </label>
-    </div>
-    <label>Details
-      <textarea name="details" rows="2" placeholder="Summary of the conversation or task…"></textarea>
-    </label>
-    <button type="submit">Add</button>
-  </form>
-</section>
+<div class="card">
+  <div class="card-hd"><h2>Add activity</h2></div>
+  <div class="card-bd">
+    <form method="post" action="/opportunities/{{ opp.opportunity_code }}/activities">
+      <div class="form-grid">
+        <div>
+          <label for="act-type">Type</label>
+          <select name="activity_type" id="act-type">
+            <option value="call">Call</option>
+            <option value="email">Email</option>
+            <option value="meeting">Meeting</option>
+            <option value="note">Note</option>
+            <option value="task">Task</option>
+          </select>
+        </div>
+        <div>
+          <label for="act-fu">Follow-up date</label>
+          <input type="date" name="follow_up_on" id="act-fu">
+        </div>
+      </div>
+      <div class="form-grid full" style="margin-top:.75rem">
+        <div>
+          <label for="act-details">Details</label>
+          <textarea name="details" id="act-details" rows="2" placeholder="Summary of the conversation or task…"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:.75rem">
+        <button type="submit" class="btn-p btn-sm">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Activity timeline -->
-<section>
-  <h3>Activity timeline <small style="font-weight:normal">{{ act_total }} total</small></h3>
-  {% if activities %}
-    {% for act in activities %}
-    <article class="activity-{{ act.activity_type or 'note' }}" style="margin-bottom:0.75rem">
-      <small>
-        <strong>{{ act.activity_type | upper if act.activity_type else '?' }}</strong>
-        &middot; {{ act.occurred_at.strftime('%Y-%m-%d %H:%M') if act.occurred_at else '—' }}
-        &middot; {{ act.legacy_author or 'user' }}
-        {% if act.completion_marker == 'Y' %}&middot; ✅ done{% elif act.completion_marker == 'N' %}&middot; 🔲 pending{% endif %}
-      </small>
-      <p style="margin:0.25rem 0 0">{{ act.details or '' }}</p>
-      {% if act.follow_up_on %}
-      <small {% if act.follow_up_on <= today and act.completion_marker != 'Y' %}class="overdue"{% endif %}>
-        Follow-up: {{ act.follow_up_on }}
-      </small>
+<div class="card">
+  <div class="card-hd">
+    <h2>Activity timeline</h2>
+    <span class="meta">{{ act_total }} total</span>
+  </div>
+  <div class="card-bd">
+    {% if activities %}
+      {% for act in activities %}
+      <div class="act-item">
+        <div class="act-dc">
+          <div class="act-d">{{ act.occurred_at.strftime('%m/%d') if act.occurred_at else '—' }}<br>{{ act.occurred_at.strftime('%H:%M') if act.occurred_at else '' }}</div>
+        </div>
+        <div class="act-body">
+          <div><span class="act-type act-{{ act.activity_type or 'note' }}">{{ act.activity_type | upper if act.activity_type else '?' }}</span></div>
+          <div class="act-det">{{ act.details or '' }}</div>
+          <div class="act-meta">
+            <span>{{ act.legacy_author or 'user' }}</span>
+            {% if act.completion_marker == 'Y' %}<span style="color:var(--pass)">✓ done</span>{% endif %}
+            {% if act.follow_up_on %}
+              <span {% if act.follow_up_on <= today and act.completion_marker != 'Y' %}class="overdue"{% endif %}>
+                Follow-up: {{ act.follow_up_on }}{% if act.follow_up_on <= today and act.completion_marker != 'Y' %} ⚠{% endif %}
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if act_total_pages > 1 %}
+      <div class="pagination">
+        {% if act_page > 1 %}<a href="?act_page={{ act_page - 1 }}">&larr; Newer</a>{% endif %}
+        <span>Page {{ act_page }} / {{ act_total_pages }}</span>
+        {% if act_page < act_total_pages %}<a href="?act_page={{ act_page + 1 }}">Older &rarr;</a>{% endif %}
+      </div>
       {% endif %}
-    </article>
-    {% endfor %}
-    {% if act_total_pages > 1 %}
-    <nav aria-label="activity pagination" style="margin-top:0.5rem">
-      {% if act_page > 1 %}
-        <a href="?act_page={{ act_page - 1 }}">&larr; Newer</a>
-      {% endif %}
-      <span>Page {{ act_page }} / {{ act_total_pages }}</span>
-      {% if act_page < act_total_pages %}
-        <a href="?act_page={{ act_page + 1 }}">Older &rarr;</a>
-      {% endif %}
-    </nav>
+    {% else %}
+      <span style="color:var(--text-3);font-size:13px">No activities yet.</span>
     {% endif %}
-  {% else %}
-    <p><small>No activities yet.</small></p>
-  {% endif %}
-</section>
+  </div>
+</div>
+
+<!-- Handoff runs -->
+{% if handoff_runs %}
+<div class="card">
+  <div class="card-hd"><h2>Handoff runs</h2></div>
+  <div class="card-bd">
+    {% for run in handoff_runs[:5] %}
+    <div class="act-item" style="cursor:default">
+      <div class="act-dc">
+        <div class="act-d">{{ run.created_at.strftime('%m/%d') if run.created_at else '' }}<br>{{ run.created_at.strftime('%H:%M') if run.created_at else '' }}</div>
+      </div>
+      <div class="act-body">
+        <a href="/handoff-runs/{{ run.id }}">
+          <span class="{% if run.coordinator_decision == 'PASS' %}badge-pass{% else %}badge-stop{% endif %}">{{ run.coordinator_decision }}</span>
+          Run #{{ run.id }}
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 {% endblock %}

@@ -2,66 +2,151 @@
 {% block title %}Handoff Run #{{ run.id }} — CRM{% endblock %}
 {% block content %}
 
-<p><a href="/opportunities/{{ run.opportunity.opportunity_code }}">&larr; {{ run.opportunity.opportunity_code }}</a>
-  &mdash; {{ run.opportunity.company.company_name }}</p>
+<div class="bc">
+  <a href="/companies">Companies</a>
+  <span class="sep">›</span>
+  <a href="/companies/{{ run.opportunity.company.company_code }}">{{ run.opportunity.company.company_name }}</a>
+  <span class="sep">›</span>
+  <a href="/opportunities/{{ run.opportunity.opportunity_code }}">{{ run.opportunity.opportunity_code }}</a>
+  <span class="sep">›</span>
+  <span>Handoff Run #{{ run.id }}</span>
+</div>
 
-<h2>Handoff Run #{{ run.id }}
-  <span class="badge {% if run.coordinator_decision == 'PASS' %}badge-pass{% else %}badge-stop{% endif %}">
-    {{ run.coordinator_decision }}
-  </span>
-</h2>
-<p><small>{{ run.created_at.strftime('%Y-%m-%d %H:%M UTC') if run.created_at else '' }}
-  &mdash; All roles are <strong>[DETERMINISTIC STAND-IN]</strong> — no LLM or API calls.</small></p>
+<div class="pg-h">
+  <div>
+    <h1>Handoff Brief
+      {% if run.coordinator_decision == 'PASS' %}
+      <span class="badge-pass">PASS</span>
+      {% else %}
+      <span class="badge-stop">STOP</span>
+      {% endif %}
+    </h1>
+    <div class="pg-sub">{{ run.created_at.strftime('%Y-%m-%d %H:%M UTC') if run.created_at else '' }} · All roles are <strong>[DETERMINISTIC STAND-IN]</strong></div>
+  </div>
+</div>
 
-<section>
-  <h3>Coordinator decision</h3>
-  <blockquote>{{ run.decision_reason }}</blockquote>
-  <form method="post" action="/opportunities/{{ run.opportunity.opportunity_code }}/handoff" style="margin-top:0.5rem">
-    <button type="submit" class="secondary">Run again (current data)</button>
-  </form>
-</section>
+<!-- Decision banner -->
+{% if run.coordinator_decision == 'PASS' %}
+<div class="d-banner d-pass">
+  <div class="d-icon">PASS</div>
+  <div class="d-body">
+    <h2>Ready for technical handoff</h2>
+    <p>{{ run.decision_reason }}</p>
+  </div>
+</div>
+{% else %}
+<div class="d-banner d-stop">
+  <div class="d-icon">STOP</div>
+  <div class="d-body">
+    <h2>Handoff blocked</h2>
+    <p>{{ run.decision_reason }}</p>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pipeline -->
+<div class="card">
+  <div class="card-hd">
+    <h2>Agent pipeline</h2>
+    <span class="meta">3-role orchestration</span>
+  </div>
+  <div class="card-bd">
+    <div class="pipeline">
+      <div class="pipe">
+        <div class="pipe-role">Role 1</div>
+        <div class="pipe-label">BriefPreparer</div>
+        <div class="pipe-det">Collects CRM data, fair details, contact info, and formats the structured brief.</div>
+      </div>
+      <div class="pipe">
+        <div class="pipe-role">Role 2</div>
+        <div class="pipe-label">BriefChecker</div>
+        <div class="pipe-det">Validates policy: fair edition set, budget known, area known, height ≤ max.</div>
+      </div>
+      <div class="pipe">
+        <div class="pipe-role">Role 3</div>
+        <div class="pipe-label">Coordinator</div>
+        <div class="pipe-det" style="font-weight:600;color:{% if run.coordinator_decision == 'PASS' %}var(--pass){% else %}var(--stop){% endif %}">Decision: {{ run.coordinator_decision }}</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% set preparer = run.preparer_output or {} %}
 {% set checker = run.checker_output or {} %}
 
-<section>
-  <details open>
-    <summary><strong>Role 1: BriefPreparer</strong> <small>[DETERMINISTIC STAND-IN]</small></summary>
-    <table>
-      <tbody>
-        <tr><th>Company</th><td>{{ preparer.get('company_name', '—') }}</td></tr>
-        <tr><th>Contact</th><td>{{ preparer.get('contact_name') or '—' }}</td></tr>
-        <tr><th>Fair</th><td>{{ preparer.get('fair_name') or '—' }} ({{ preparer.get('fair_edition_code') or '—' }})</td></tr>
-        <tr><th>Location</th><td>{{ preparer.get('fair_city') or '—' }}, {{ preparer.get('fair_venue') or '—' }}</td></tr>
-        <tr><th>Fair dates</th><td>{{ preparer.get('fair_starts_on') or '—' }} → {{ preparer.get('fair_ends_on') or '—' }}</td></tr>
-        <tr><th>Max height</th><td>{{ preparer.get('max_stand_height_m') or '—' }} m</td></tr>
-        <tr><th>Client budget</th><td>{{ preparer.get('client_budget_eur') or '—' }} EUR</td></tr>
-        <tr><th>Stand area</th><td>{{ preparer.get('stand_area_sqm') or '—' }} m²</td></tr>
-        <tr><th>Requested height</th><td>{{ preparer.get('requested_height_m') or '—' }} m</td></tr>
-        <tr><th>Brief notes</th><td>{{ preparer.get('brief_notes') or '—' }}</td></tr>
-        <tr><th>Expected close</th><td>{{ preparer.get('expected_close_on') or '—' }}</td></tr>
-      </tbody>
-    </table>
-    <p><strong>Proposed next step:</strong><br>{{ preparer.get('proposed_next_step', '—') }}</p>
-  </details>
-</section>
+<div class="grid-2">
+  <!-- Blocking issues -->
+  <div class="card">
+    <div class="card-hd"><h2>Blocking issues</h2></div>
+    <div class="card-bd">
+      {% set blocking = checker.get('blocking_issues', []) %}
+      {% if blocking %}
+        {% for issue in blocking %}
+        <div style="display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.5rem">
+          <span style="color:var(--stop);font-weight:700">✗</span>
+          <span style="font-size:13.5px">{{ issue }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <span style="color:var(--pass);font-size:13.5px;font-weight:500">No blocking issues.</span>
+      {% endif %}
+    </div>
+  </div>
 
-<section>
-  <details open>
-    <summary><strong>Role 2: BriefChecker</strong> <small>[DETERMINISTIC STAND-IN]</small> — policy: {{ checker.get('policy', '—') }}</summary>
-    {% set blocking = checker.get('blocking_issues', []) %}
-    {% set advisory = checker.get('advisory_notes', []) %}
-    {% if blocking %}
-    <p><strong>Blocking issues:</strong></p>
-    <ul>{% for issue in blocking %}<li class="warn">{{ issue }}</li>{% endfor %}</ul>
-    {% else %}
-    <p style="color:#065f46">✅ No blocking issues.</p>
+  <!-- Advisory -->
+  <div class="card">
+    <div class="card-hd"><h2>Advisory notes</h2></div>
+    <div class="card-bd">
+      {% set advisory = checker.get('advisory_notes', []) %}
+      {% if advisory %}
+        {% for note in advisory %}
+        <div style="display:flex;gap:.5rem;align-items:flex-start;margin-bottom:.5rem">
+          <span style="color:var(--warn);font-weight:700">!</span>
+          <span style="font-size:13.5px">{{ note }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <span style="color:var(--text-3);font-size:13.5px">No advisory notes.</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Brief prepared -->
+<div class="card">
+  <div class="card-hd">
+    <h2>CRM snapshot</h2>
+    <span class="meta">Policy: {{ checker.get('policy', '—') }}</span>
+  </div>
+  <div class="card-bd">
+    <div class="kv">
+      <div class="kv-r"><span class="kv-k">Company</span><span class="kv-v">{{ preparer.get('company_name', '—') }}</span></div>
+      <div class="kv-r"><span class="kv-k">Contact</span><span class="kv-v">{{ preparer.get('contact_name') or '—' }}</span></div>
+      <div class="kv-r"><span class="kv-k">Fair</span><span class="kv-v">{{ preparer.get('fair_name') or '—' }} ({{ preparer.get('fair_edition_code') or '—' }})</span></div>
+      <div class="kv-r"><span class="kv-k">Location</span><span class="kv-v">{{ preparer.get('fair_city') or '—' }}, {{ preparer.get('fair_venue') or '—' }}</span></div>
+      <div class="kv-r"><span class="kv-k">Fair dates</span><span class="kv-v">{{ preparer.get('fair_starts_on') or '—' }} → {{ preparer.get('fair_ends_on') or '—' }}</span></div>
+      <div class="kv-r"><span class="kv-k">Max height</span><span class="kv-v">{{ preparer.get('max_stand_height_m') or '—' }} m</span></div>
+      <div class="kv-r"><span class="kv-k">Client budget</span><span class="kv-v">{{ preparer.get('client_budget_eur') or '—' }} EUR</span></div>
+      <div class="kv-r"><span class="kv-k">Stand area</span><span class="kv-v">{{ preparer.get('stand_area_sqm') or '—' }} m²</span></div>
+      <div class="kv-r"><span class="kv-k">Req. height</span><span class="kv-v">{{ preparer.get('requested_height_m') or '—' }} m</span></div>
+      {% if preparer.get('brief_notes') %}
+      <div class="kv-r"><span class="kv-k">Brief notes</span><span class="kv-v" style="font-style:italic">{{ preparer.get('brief_notes') }}</span></div>
+      {% endif %}
+      <div class="kv-r"><span class="kv-k">Expected close</span><span class="kv-v">{{ preparer.get('expected_close_on') or '—' }}</span></div>
+    </div>
+    {% if preparer.get('proposed_next_step') %}
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border-f)">
+      <span class="kv-k" style="margin-bottom:.3rem;display:block">Proposed next step</span>
+      <p style="font-size:13.5px;margin:0">{{ preparer.get('proposed_next_step') }}</p>
+    </div>
     {% endif %}
-    {% if advisory %}
-    <p><strong>Advisory:</strong></p>
-    <ul>{% for note in advisory %}<li><small>{{ note }}</small></li>{% endfor %}</ul>
-    {% endif %}
-  </details>
-</section>
+  </div>
+</div>
+
+<div style="margin-top:.5rem">
+  <form method="post" action="/opportunities/{{ run.opportunity.opportunity_code }}/handoff" style="display:inline">
+    <button type="submit" class="btn-s">Run again (current data)</button>
+  </form>
+</div>
 
 {% endblock %}

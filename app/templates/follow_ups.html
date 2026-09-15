@@ -1,50 +1,61 @@
 {% extends "base.html" %}
 {% block title %}Follow-ups — CRM{% endblock %}
 {% block content %}
-<h2>📅 Follow-ups due (next 7 days + overdue)</h2>
-<p><small>Showing open tasks and activities with a follow-up date due by {{ week_ahead }}.</small></p>
+
+<div class="pg-h"><h1>Follow-ups</h1></div>
+<p style="font-size:13.5px;color:var(--text-2);margin-bottom:1.5rem">Open tasks and activities with a follow-up date due by {{ week_ahead }}.</p>
 
 {% if activities %}
-<table>
-  <thead>
-    <tr><th>Due</th><th>Type</th><th>Company</th><th>Opportunity</th><th>Details</th><th></th></tr>
-  </thead>
-  <tbody>
-  {% for act in activities %}
-  <tr>
-    <td {% if act.follow_up_on <= today %}class="overdue"{% endif %}>
-      {{ act.follow_up_on }}
-    </td>
-    <td>{{ act.activity_type or '—' }}</td>
-    <td><a href="/companies/{{ act.company.company_code }}">{{ act.company.company_name }}</a></td>
-    <td>
-      {% if act.opportunity %}
-      <a href="/opportunities/{{ act.opportunity.opportunity_code }}">{{ act.opportunity.opportunity_code }}</a>
-      {% else %}—{% endif %}
-    </td>
-    <td>{{ act.details or '' }}</td>
-    <td>
-      <form method="post" action="/activities/{{ act.id }}/complete">
-        <button type="submit" style="padding:0.2em 0.6em;font-size:0.85em">✅ Done</button>
-      </form>
-    </td>
-  </tr>
-  {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p>No follow-ups due in the next 7 days.</p>
-{% endif %}
+<div class="card">
+  <div class="card-hd">
+    <h2>Due items</h2>
+    <span class="meta">{{ total }} total</span>
+  </div>
+  <div class="tw" style="padding:0">
+    <table class="dt" style="margin:0">
+      <thead>
+        <tr><th>Due</th><th>Type</th><th>Company</th><th>Opportunity</th><th>Details</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for act in activities %}
+        <tr>
+          <td {% if act.follow_up_on <= today %}class="overdue"{% endif %} style="white-space:nowrap;font-variant-numeric:tabular-nums">
+            {{ act.follow_up_on }}{% if act.follow_up_on <= today %} ⚠{% endif %}
+          </td>
+          <td><span class="act-type act-{{ act.activity_type or 'note' }}">{{ act.activity_type or '—' }}</span></td>
+          <td><a href="/companies/{{ act.company.company_code }}">{{ act.company.company_name }}</a></td>
+          <td>
+            {% if act.opportunity %}
+            <a href="/opportunities/{{ act.opportunity.opportunity_code }}">{{ act.opportunity.opportunity_code }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td style="max-width:300px">{{ act.details or '' }}</td>
+          <td>
+            <form method="post" action="/activities/{{ act.id }}/complete" style="margin:0">
+              <button type="submit" class="btn-s btn-sm">Done</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 
 {% if total_pages > 1 %}
-<nav aria-label="pagination" style="margin-top:0.5rem">
-  {% if page > 1 %}
-    <a href="/follow-ups?page={{ page - 1 }}">&larr; Prev</a>
-  {% endif %}
+<div class="pagination">
+  {% if page > 1 %}<a href="/follow-ups?page={{ page - 1 }}">&larr; Prev</a>{% endif %}
   <span>Page {{ page }} / {{ total_pages }} ({{ total }} total)</span>
-  {% if page < total_pages %}
-    <a href="/follow-ups?page={{ page + 1 }}">Next &rarr;</a>
-  {% endif %}
-</nav>
+  {% if page < total_pages %}<a href="/follow-ups?page={{ page + 1 }}">Next &rarr;</a>{% endif %}
+</div>
 {% endif %}
+
+{% else %}
+<div class="card">
+  <div class="card-bd">
+    <span style="color:var(--text-3);font-size:13.5px">No follow-ups due in the next 7 days. All clear.</span>
+  </div>
+</div>
+{% endif %}
+
 {% endblock %}

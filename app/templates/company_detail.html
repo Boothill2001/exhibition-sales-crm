@@ -2,80 +2,110 @@
 {% block title %}{{ company.company_name }} — CRM{% endblock %}
 {% block content %}
 
-<p><a href="/companies">&larr; All companies</a></p>
-<h2>{{ company.company_name }}</h2>
-<div class="grid-2">
+<div class="bc">
+  <a href="/companies">Companies</a>
+  <span class="sep">›</span>
+  <span>{{ company.company_name }}</span>
+</div>
+
+<div class="pg-h">
   <div>
-    <p><strong>Code:</strong> {{ company.company_code }}</p>
-    <p><strong>Region:</strong> {{ company.region or '—' }} ({{ company.province_code or '—' }})</p>
-    <p><strong>Sales rep:</strong> {{ company.sales_rep or '—' }}</p>
+    <h1>{{ company.company_name }}</h1>
+    <div class="pg-sub">{{ company.region or '—' }} · Sales rep: {{ company.sales_rep or '—' }}</div>
   </div>
 </div>
 
-<section>
-  <h3>Contacts</h3>
-  {% if company.contacts %}
-  <table>
-    <thead><tr><th>Name</th><th>Email</th><th>Phone</th></tr></thead>
-    <tbody>
-    {% for ct in company.contacts %}
-    <tr>
-      <td>{{ ct.first_name or '' }} {{ ct.last_name or '' }}</td>
-      <td>{% if ct.email %}<a href="mailto:{{ ct.email }}">{{ ct.email }}</a>{% else %}—{% endif %}</td>
-      <td>{{ ct.phone or '—' }}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <p><small>No contacts.</small></p>
-  {% endif %}
-</section>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-hd"><h2>Contacts</h2><span class="meta">{{ company.contacts | length }}</span></div>
+    <div class="card-bd" style="display:flex;flex-wrap:wrap;gap:.75rem">
+      {% for ct in company.contacts %}
+      <div class="contact-chip">
+        <div class="contact-av">{{ (ct.first_name or '?')[0] }}{{ (ct.last_name or '?')[0] }}</div>
+        <div>
+          <div style="font-weight:500">{{ ct.first_name or '' }} {{ ct.last_name or '' }}</div>
+          {% if ct.email %}<div style="font-size:11.5px;color:var(--text-2)"><a href="mailto:{{ ct.email }}">{{ ct.email }}</a></div>{% endif %}
+          {% if ct.phone %}<div style="font-size:11.5px;color:var(--text-3)">{{ ct.phone }}</div>{% endif %}
+        </div>
+      </div>
+      {% else %}
+      <span style="color:var(--text-3);font-size:13px">No contacts on file.</span>
+      {% endfor %}
+    </div>
+  </div>
 
-<section>
-  <h3>Opportunities by fair</h3>
-  {% if fair_groups %}
-    {% for fair_name, opps in fair_groups.items() %}
-    <details open>
-      <summary><strong>{{ fair_name }}</strong> ({{ opps|length }})</summary>
-      <table>
-        <thead><tr><th>Code</th><th>Status</th><th>Amount</th><th>Expected close</th><th>Contact</th></tr></thead>
-        <tbody>
+  <div class="card">
+    <div class="card-hd"><h2>Details</h2></div>
+    <div class="card-bd">
+      <div class="kv">
+        <div class="kv-r"><span class="kv-k">Code</span><span class="kv-v">{{ company.company_code }}</span></div>
+        <div class="kv-r"><span class="kv-k">Region</span><span class="kv-v">{{ company.region or '—' }}</span></div>
+        <div class="kv-r"><span class="kv-k">Province</span><span class="kv-v">{{ company.province_code or '—' }}</span></div>
+        <div class="kv-r"><span class="kv-k">Sales rep</span><span class="kv-v">{{ company.sales_rep or '—' }}</span></div>
+        <div class="kv-r"><span class="kv-k">Opportunities</span><span class="kv-v">{{ company.opportunities | length }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if fair_groups %}
+{% for fair_name, opps in fair_groups.items() %}
+<div class="card">
+  <div class="card-hd">
+    <h3>{{ fair_name }}</h3>
+    <span class="meta">{{ opps | length }} opportunit{{ 'y' if opps | length == 1 else 'ies' }}</span>
+  </div>
+  <div class="tw" style="padding:0">
+    <table class="dt" style="margin:0">
+      <thead>
+        <tr><th>Code</th><th>Status</th><th>Amount</th><th>Expected close</th><th>Contact</th></tr>
+      </thead>
+      <tbody>
         {% for opp in opps %}
         <tr>
           <td><a href="/opportunities/{{ opp.opportunity_code }}">{{ opp.opportunity_code }}</a></td>
           <td>
             {% set s = opp.status or 'unknown' %}
-            {% if 'open' in s %}<span class="badge badge-open">{{ s }}</span>
-            {% elif 'won' in s %}<span class="badge badge-won">{{ s }}</span>
-            {% elif 'lost' in s or 'clos' in s %}<span class="badge badge-lost">{{ s }}</span>
-            {% else %}<span class="badge badge-other">{{ s }}</span>{% endif %}
+            {% if s == 'open' %}<span class="st st-open">{{ s }}</span>
+            {% elif s == 'won' %}<span class="st st-won">{{ s }}</span>
+            {% elif s == 'lost' or s == 'closed' %}<span class="st st-lost">{{ s }}</span>
+            {% else %}<span class="st st-other">{{ s }}</span>{% endif %}
           </td>
-          <td>{{ opp.amount_eur | eur }}</td>
-          <td>{{ opp.expected_close_on | fmtdate }}</td>
+          <td class="num">{{ opp.amount_eur | eur }}</td>
+          <td class="dim">{{ opp.expected_close_on | fmtdate }}</td>
           <td>{% if opp.contact %}{{ opp.contact.first_name or '' }} {{ opp.contact.last_name or '' }}{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}
-        </tbody>
-      </table>
-    </details>
-    {% endfor %}
-  {% else %}
-    <p><small>No opportunities.</small></p>
-  {% endif %}
-</section>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card"><div class="card-bd"><span style="color:var(--text-3);font-size:13px">No opportunities.</span></div></div>
+{% endif %}
 
 {% if company_activities %}
-<section>
-  <h3>Company-level activity log</h3>
-  {% for act in company_activities %}
-  <article class="activity-{{ act.activity_type or 'note' }}">
-    <small>{{ act.activity_type | upper }} &middot; {{ act.occurred_at.strftime('%Y-%m-%d %H:%M') if act.occurred_at else '—' }} &middot; {{ act.legacy_author or 'unknown' }}</small>
-    <p style="margin:0.25rem 0 0">{{ act.details or '' }}</p>
-    {% if act.follow_up_on %}<small>Follow-up: {{ act.follow_up_on }}</small>{% endif %}
-  </article>
-  {% endfor %}
-</section>
+<div class="card">
+  <div class="card-hd"><h2>Company-level activities</h2><span class="meta">{{ company_activities | length }}</span></div>
+  <div class="card-bd">
+    {% for act in company_activities %}
+    <div class="act-item">
+      <div class="act-dc">
+        <div class="act-d">{{ act.occurred_at.strftime('%m/%d') if act.occurred_at else '—' }}<br>{{ act.occurred_at.strftime('%H:%M') if act.occurred_at else '' }}</div>
+      </div>
+      <div class="act-body">
+        <div><span class="act-type act-{{ act.activity_type or 'note' }}">{{ act.activity_type | upper if act.activity_type else '?' }}</span></div>
+        <div class="act-det">{{ act.details or '' }}</div>
+        <div class="act-meta">
+          <span>{{ act.legacy_author or 'unknown' }}</span>
+          {% if act.follow_up_on %}<span>Follow-up: {{ act.follow_up_on }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 {% endif %}
 
 {% endblock %}
